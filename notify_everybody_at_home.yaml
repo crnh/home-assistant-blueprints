@@ -1,6 +1,7 @@
 blueprint:
   domain: script
   name: Notify everybody at home
+  source_url: https://github.com/crnh/home-assistant-blueprints/blob/main/notify_everybody_at_home.yaml
   input:
     person_service_map:
       name: Person notify services
