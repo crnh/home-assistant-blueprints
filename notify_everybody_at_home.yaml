@@ -1,0 +1,64 @@
+blueprint:
+  domain: script
+  name: Notify everybody at home
+  input:
+    person_service_map:
+      name: Person notify services
+      description: >
+        Mappings between person names and their corresponding notify services.
+        The default value shows what the object should look like if the service 
+        `notify.mobile_app_john` belongs to `person.john`.
+
+      selector:
+        object:
+      default:
+        john: notify.mobile_app_john
+
+mode: parallel
+
+fields:
+  persons:
+    name: Persons
+    description: >
+      List with persons who should get a notification. If not supplied, all
+      persons will be used.
+    required: false
+    selector:
+      object:
+  title:
+    name: Title
+    description: Title of the notification
+    required: false
+    selector:
+      text:
+  message:
+    name: Message
+    description: Message to send
+    required: true
+    selector:
+      text:
+        multiline: true
+  data:
+    name: Data
+    description: Notification data object
+    required: false
+    selector:
+      object:
+sequence:
+  - variables:
+      person_service_map: !input person_service_map
+      persons: >
+        {% set all_persons = person_service_map.keys() | list %}
+        {{ persons | default(all_persons, true) }}
+  - repeat:
+      count: "{{ persons | count }}"
+      sequence:
+        - choose:
+            conditions:
+              - "{{ is_state('person.' ~ persons[repeat.index - 1], 'home') }}"
+            sequence:
+              - service: "{{ person_service_map[persons[repeat.index - 1]] }}"
+                data:
+                  title: "{{ title | default }}"
+                  message: "{{ message | default }}"
+                  data: "{{ data | default({}) }}"
